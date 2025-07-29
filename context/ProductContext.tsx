@@ -1,4 +1,4 @@
-import { Filters, Product } from "@/types";
+import { Filters, IProduct } from "@/types";
 import { SplashScreen } from "expo-router";
 import {
   createContext,
@@ -11,8 +11,9 @@ import {
 
 interface ProductContextType {
   error: string | null;
-  products: Product[];
-  setProducts: (product: Product[]) => void;
+  categories: string[];
+  products: IProduct[];
+  setProducts: (product: IProduct[]) => void;
   page: number;
   setPage: (page: number) => void;
   filters: Filters;
@@ -26,7 +27,8 @@ const ProductContext = createContext<ProductContextType | null>(null);
 
 export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [page, setPage] = useState<number>(0);
   const [filters, setFilters] = useState<Filters>({
     category: "",
@@ -35,6 +37,20 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   });
   const [sortBy, setSortBy] = useState<string>("");
   const [appIsReady, setAppIsReady] = useState<boolean>(false);
+
+  const getProductCategories = async () => {
+    const productCategories = await fetch(
+      "https://dummyjson.com/products/category-list"
+    )
+      .then((res) => {
+        return res.json();
+      })
+      .catch((e) => {
+        console.log(e);
+        setError(e.message || "Failed to fetch product categories");
+      });
+    setCategories(productCategories.toReversed());
+  };
 
   useEffect(() => {
     const prepareApp = async () => {
@@ -61,6 +77,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
+    getProductCategories();
     prepareApp();
   }, []);
 
@@ -68,6 +85,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     <ProductContext
       value={{
         error,
+        categories,
         products,
         setProducts,
         page,

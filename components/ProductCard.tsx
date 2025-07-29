@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from "react-native";
 import React from "react";
-import { Product } from "@/types";
+import { IProduct } from "@/types";
 
 const WIDTH = Dimensions.get("screen").width;
 
@@ -15,7 +15,7 @@ const ProductCard = ({
   product,
   handlePress,
 }: {
-  product: Product;
+  product: IProduct;
   handlePress: () => void;
 }) => {
   return (
