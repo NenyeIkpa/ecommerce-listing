@@ -58,3 +58,6 @@ export interface Filters {
   minimumOrderQuantity?: number;
   shippingSpeed?: string;
 }
+
+export type SortOption = "title" | "lowest-price" | "highest-price" | "rating";
+export type SortOrder = "asc" | "desc";

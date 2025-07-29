@@ -15,25 +15,36 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
-import { IProduct } from "@/types";
+import { IProduct, SortOption, SortOrder } from "@/types";
 import { useRouter } from "expo-router";
 import { capitalizeFirstLetter } from "@/utils";
 import ProductCard from "@/components/ProductCard";
 import { useProductContext } from "@/context/ProductContext";
+import { SortByModal } from "@/components/SortByModal";
 
 const Home = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
   const { categories, products, error, appIsReady } = useProductContext();
   const [searchText, setSearchText] = useState<string>("");
-  //   console.log("categories", categories);
   const [categoryOption, setCategoryOption] = useState<string>("");
   const [productList, setProductList] = useState<IProduct[]>(products);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("title");
+  const [order, setOrder] = useState<SortOrder>("asc");
 
   useEffect(() => {
     setProductList(products);
     setCategoryOption("");
   }, [appIsReady]);
+
+  useEffect(() => {
+    if (sortBy !== "title") {
+      sortBySelection();
+    } else {
+      setProductList(products);
+    }
+  }, [sortBy]);
 
   const onCategoryPressed = (selected: string) => {
     if (categoryOption === selected) {
@@ -42,6 +53,21 @@ const Home = () => {
     } else {
       setCategoryOption(selected);
       fetchProductsByCategory(selected);
+    }
+  };
+
+  const sortBySelection = async () => {
+    const sortFinal =
+      sortBy === "lowest-price" || "highest-price" ? "price" : sortBy;
+
+    try {
+      const data = await fetch(
+        `https://dummyjson.com/products?sortBy=${sortFinal}&order=${order}?limit=20`
+      ).then((res) => res.json());
+      setCategoryOption("");
+      setProductList(data.products);
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -169,6 +195,35 @@ const Home = () => {
         contentContainerStyle={styles.content}
         style={{ backgroundColor: "white" }}
       />
+      <View
+        style={{
+          // width: "40%",
+          height: 40,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          backgroundColor: "#000",
+          paddingHorizontal: 20,
+          borderRadius: 20,
+          alignSelf: "center",
+          position: "absolute",
+          bottom: 60,
+        }}
+      >
+        <Text onPress={() => setModalVisible(true)} style={styles.text}>
+          Sort
+        </Text>
+        {/* <View style={{ height: 10, width: 0.5, backgroundColor: "white" }} />
+        <Text style={styles.text}>Filter</Text> */}
+      </View>
+      <SortByModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        selected={sortBy}
+        onSelect={(value) => setSortBy(value)}
+        order={order}
+        onOrderSelect={setOrder}
+      />
       <StatusBar style="light" backgroundColor="#01031B" />
     </SafeAreaView>
   );
@@ -227,5 +282,10 @@ const styles = StyleSheet.create({
   content: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  text: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

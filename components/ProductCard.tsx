@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import React from "react";
 import { IProduct } from "@/types";
+import { RatingStars } from "./RatingStars";
 
 const WIDTH = Dimensions.get("screen").width;
 
@@ -30,6 +31,7 @@ const ProductCard = ({
         {product.title}
       </Text>
       <Text style={styles.text}>${product.price}</Text>
+      <RatingStars rating={product.rating} />
     </Pressable>
   );
 };
