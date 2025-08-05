@@ -87,19 +87,26 @@ const Home = () => {
     }
   };
 
-  const sortBySelection = useCallback(async () => {
-    const sortFinal =
-      sortBy === "lowest-price" || "highest-price" ? "price" : sortBy;
+  const sortBySelection = useCallback(
+    async (sortOption: SortOption, sortOrder: SortOrder) => {
+      if (sortOption === "title") {
+        setProductList(products);
+        return;
+      }
+      const sortFinal =
+        sortOption === "lowest-price" || "highest-price" ? "price" : sortBy;
 
-    try {
-      const response = await fetchSortedProducts(sortFinal, order);
-      setCategoryOption("");
-      if (response.data) setProductList(response.data.products);
-      if (response.error) setError(response.error);
-    } catch (error) {
-      console.log(error);
-    }
-  }, [page]);
+      try {
+        const response = await fetchSortedProducts(sortFinal, sortOrder);
+        setCategoryOption("");
+        if (response.data) setProductList(response.data.products);
+        if (response.error) setError(response.error);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [page]
+  );
 
   const getProductsByCategory = useCallback(
     async (category: string) => {
@@ -262,10 +269,7 @@ const Home = () => {
       <SortByModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        selected={sortBy}
-        onSelect={(value) => setSortBy(value)}
-        order={order}
-        onOrderSelect={setOrder}
+        onSelected={(sortBy, order) => sortBySelection(sortBy, order)}
       />
       <StatusBar style="light" backgroundColor="#01031B" />
     </SafeAreaView>

@@ -13,16 +13,13 @@ import { SortOption, SortOrder } from "@/types";
 interface SortByModalProps {
   visible: boolean;
   onClose: () => void;
-  selected: SortOption;
-  onSelect: (value: SortOption) => void;
-  order: SortOrder;
-  onOrderSelect: (value: SortOrder) => void;
+  onSelected?: (sortBy: SortOption, order: SortOrder) => void;
 }
 
 const sortOptions: {
   label: string;
   value: SortOption;
-  order: "asc" | "desc";
+  order: SortOrder;
 }[] = [
   { label: "Title", value: "title", order: "asc" },
   //   { label: "Rating", value: "rating", order: "desc" },
@@ -33,11 +30,9 @@ const sortOptions: {
 export const SortByModal: React.FC<SortByModalProps> = ({
   visible,
   onClose,
-  selected,
-  onSelect,
-  order,
-  onOrderSelect,
+  onSelected,
 }) => {
+  const [selected, setSelected] = useState<SortOption>("title");
   return (
     <Modal
       visible={visible}
@@ -53,8 +48,8 @@ export const SortByModal: React.FC<SortByModalProps> = ({
               key={option.label}
               style={styles.option}
               onPress={() => {
-                onSelect(option.value);
-                onOrderSelect(option.order);
+                setSelected(option.value);
+                onSelected && onSelected(option.value, option.order);
                 onClose();
               }}
             >
