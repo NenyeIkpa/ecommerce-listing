@@ -27,6 +27,7 @@ import {
   searchProducts,
 } from "@/api/api";
 
+const ITEM_HEIGHT = 100;
 const Home = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
@@ -44,14 +45,6 @@ const Home = () => {
     setProductList(products);
     setCategoryOption("");
   }, [appIsReady]);
-
-  useEffect(() => {
-    if (sortBy !== "title") {
-      sortBySelection();
-    } else {
-      setProductList(products);
-    }
-  }, [sortBy]);
 
   const search = useCallback(
     async (searchString: string) => {
@@ -88,7 +81,7 @@ const Home = () => {
   };
 
   const sortBySelection = useCallback(
-    async (sortOption: SortOption, sortOrder: SortOrder) => {
+    async (sortOption: SortOption = "title", sortOrder: SortOrder = "asc") => {
       if (sortOption === "title") {
         setProductList(products);
         return;
@@ -122,11 +115,9 @@ const Home = () => {
     [categoryOption]
   );
 
-  const _renderItem = ({ item }: { item: IProduct }) => (
-    <ProductCard
-      product={item}
-      handlePress={() => router.push(`/${item.id}`)}
-    />
+  const _renderItem = useCallback(
+    ({ item }: { item: IProduct }) => <ProductCard product={item} />,
+    []
   );
 
   if (!appIsReady)
@@ -244,6 +235,8 @@ const Home = () => {
         style={{ backgroundColor: "white" }}
         onEndReached={() => setPage(page + 1)}
         onEndReachedThreshold={0.5}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
       />
       <View
         style={{

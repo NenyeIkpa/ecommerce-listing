@@ -9,16 +9,15 @@ import {
 import React from "react";
 import { IProduct } from "@/types";
 import { RatingStars } from "./RatingStars";
+import { useRouter } from "expo-router";
 
 const WIDTH = Dimensions.get("screen").width;
 
-const ProductCard = ({
-  product,
-  handlePress,
-}: {
-  product: IProduct;
-  handlePress: () => void;
-}) => {
+const ProductCard = ({ product }: { product: IProduct }) => {
+  const router = useRouter();
+  const handlePress = () => {
+    router.push(`/${product.id}`);
+  };
   return (
     <Pressable onPress={handlePress} style={styles.container}>
       <Image
@@ -36,7 +35,7 @@ const ProductCard = ({
   );
 };
 
-export default ProductCard;
+export default React.memo(ProductCard);
 
 const styles = StyleSheet.create({
   container: {
