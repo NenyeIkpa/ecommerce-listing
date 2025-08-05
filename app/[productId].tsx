@@ -13,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import { RatingStars } from "@/components/RatingStars";
 import { IProduct } from "@/types";
 import { Entypo } from "@expo/vector-icons";
+import { fetchProductDetails } from "@/api/api";
 
 const Product = () => {
   const router = useRouter();
@@ -27,13 +28,8 @@ const Product = () => {
   const fetchProduct = async () => {
     setLoading(true);
     try {
-      let data = await fetch(`https://dummyjson.com/product/${productId}`).then(
-        (res) => {
-          return res.json();
-        }
-      );
-
-      setProduct(data);
+      let product = await fetchProductDetails(Number(productId));
+      setProduct(product.data);
     } catch (error) {
     } finally {
       setLoading(false);

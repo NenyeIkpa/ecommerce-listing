@@ -1,3 +1,4 @@
+import { fetchProductCategories, fetchProducts } from "@/api/api";
 import { Filters, IProduct } from "@/types";
 import { SplashScreen } from "expo-router";
 import {
@@ -11,15 +12,12 @@ import {
 
 interface ProductContextType {
   error: string | null;
+  setError: (error: string | null) => void;
   categories: string[];
   products: IProduct[];
   setProducts: (product: IProduct[]) => void;
   page: number;
   setPage: (page: number) => void;
-  filters: Filters;
-  setFilters: (filter: Filters) => void;
-  sortBy: string;
-  setSortBy: (value: string) => void;
   appIsReady: boolean;
 }
 
@@ -30,44 +28,34 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [page, setPage] = useState<number>(0);
-  const [filters, setFilters] = useState<Filters>({
-    category: "",
-    brand: "",
-    priceRange: { min: 0, max: 0 },
-  });
-  const [sortBy, setSortBy] = useState<string>("");
   const [appIsReady, setAppIsReady] = useState<boolean>(false);
 
   const getProductCategories = async () => {
-    const productCategories = await fetch(
-      "https://dummyjson.com/products/category-list"
-    )
-      .then((res) => {
-        return res.json();
-      })
-      .catch((e) => {
+    try {
+      const productCategories = await fetchProductCategories();
+      if (productCategories.error) {
+        setError(productCategories.error);
+        return;
+      }
+      if (productCategories.data)
+        setCategories(productCategories.data.toReversed());
+    } catch {
+      (e: Error) => {
         console.log(e);
         setError(e.message || "Failed to fetch product categories");
-      });
-    setCategories(productCategories.toReversed());
+      };
+    }
   };
 
   useEffect(() => {
     const prepareApp = async () => {
       try {
         await SplashScreen.preventAutoHideAsync();
-        const data = await fetch(
-          `https://dummyjson.com/products?limit=20&skip=${page * 20}`
-        )
-          .then((response) => {
-            return response.json();
-          })
-          .catch((e) => {
-            console.log(e);
-            setError(e.message || "Failed to fetch products");
-          });
-
-        setProducts(data.products);
+        const response = await fetchProducts(page);
+        if (response.data) {
+          setProducts((prev) => [...prev, ...response.data.products]);
+        }
+        if (response.error) setError(response.error);
         await SplashScreen.hideAsync();
       } catch (error: any) {
         console.error("Error fetching products:", error);
@@ -79,21 +67,18 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
 
     getProductCategories();
     prepareApp();
-  }, []);
+  }, [page]);
 
   return (
     <ProductContext
       value={{
         error,
+        setError,
         categories,
         products,
         setProducts,
         page,
         setPage,
-        filters,
-        setFilters,
-        sortBy,
-        setSortBy,
         appIsReady,
       }}
     >

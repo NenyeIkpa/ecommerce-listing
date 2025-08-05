@@ -21,17 +21,24 @@ import { capitalizeFirstLetter } from "@/utils";
 import ProductCard from "@/components/ProductCard";
 import { useProductContext } from "@/context/ProductContext";
 import { SortByModal } from "@/components/SortByModal";
+import {
+  fetchProductsByCategory,
+  fetchSortedProducts,
+  searchProducts,
+} from "@/api/api";
 
 const Home = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
-  const { categories, products, error, appIsReady } = useProductContext();
+  const { categories, products, page, setPage, error, setError, appIsReady } =
+    useProductContext();
   const [searchText, setSearchText] = useState<string>("");
   const [categoryOption, setCategoryOption] = useState<string>("");
   const [productList, setProductList] = useState<IProduct[]>(products);
   const [modalVisible, setModalVisible] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("title");
   const [order, setOrder] = useState<SortOrder>("asc");
+  const [noResultFound, setNoResultFound] = useState(false);
 
   useEffect(() => {
     setProductList(products);
@@ -46,46 +53,60 @@ const Home = () => {
     }
   }, [sortBy]);
 
+  const search = useCallback(
+    async (searchString: string) => {
+      if (searchString.trim() === "") {
+        return;
+      }
+      try {
+        setCategoryOption("");
+        let response = await searchProducts(searchString);
+        if (response.data && response.data.products.length > 0) {
+          setProductList(response.data.products);
+          setNoResultFound(false);
+        } else {
+          setNoResultFound(true);
+        }
+        if (response.error) {
+          setError(response.error);
+        }
+      } catch (error: any) {
+        setError(error.message || "Failed to search products");
+      }
+    },
+    [searchText]
+  );
   const onCategoryPressed = (selected: string) => {
+    setSearchText("");
     if (categoryOption === selected) {
       setCategoryOption("");
       setProductList(products);
     } else {
       setCategoryOption(selected);
-      fetchProductsByCategory(selected);
+      getProductsByCategory(selected);
     }
   };
 
-  const sortBySelection = async () => {
+  const sortBySelection = useCallback(async () => {
     const sortFinal =
       sortBy === "lowest-price" || "highest-price" ? "price" : sortBy;
 
     try {
-      const data = await fetch(
-        `https://dummyjson.com/products?sortBy=${sortFinal}&order=${order}?limit=20`
-      ).then((res) => res.json());
+      const response = await fetchSortedProducts(sortFinal, order);
       setCategoryOption("");
-      setProductList(data.products);
+      if (response.data) setProductList(response.data.products);
+      if (response.error) setError(response.error);
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [page]);
 
-  const fetchProductsByCategory = useCallback(
+  const getProductsByCategory = useCallback(
     async (category: string) => {
-      console.log("fetchProductsByCategory", category);
       setLoading(true);
       try {
-        let data = await fetch(
-          `https://dummyjson.com/products/category/${category}`
-        ).then((res) => {
-          return res.json();
-        });
-        console.log(
-          "fetchProductsByCategory res",
-          JSON.stringify(data, null, 2)
-        );
-        setProductList(data.products);
+        let response = await fetchProductsByCategory(category);
+        setProductList(response.data.products);
       } catch (error) {
       } finally {
         setLoading(false);
@@ -128,6 +149,7 @@ const Home = () => {
               size={20}
               color="#999"
               style={styles.searchIcon}
+              onPress={() => search(searchText)}
             />
             <TextInput
               style={styles.searchInput}
@@ -136,13 +158,32 @@ const Home = () => {
               value={searchText}
               onChangeText={setSearchText}
               returnKeyType="search"
+              onSubmitEditing={(e) => search(e.nativeEvent.text)}
             />
+            {searchText && (
+              <Ionicons
+                name="close-circle-outline"
+                size={24}
+                color="#999"
+                style={styles.searchIcon}
+                onPress={() => {
+                  setSearchText("");
+                  setNoResultFound(false);
+                  setProductList(products);
+                }}
+              />
+            )}
           </View>
         </View>
         <View style={styles.cart}>
           <Feather name="shopping-cart" size={24} color="white" />
         </View>
       </View>
+      {noResultFound && (
+        <Text
+          style={styles.noResultsFound}
+        >{`No Results Found for ${searchText}`}</Text>
+      )}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -194,6 +235,8 @@ const Home = () => {
         numColumns={2}
         contentContainerStyle={styles.content}
         style={{ backgroundColor: "white" }}
+        onEndReached={() => setPage(page + 1)}
+        onEndReachedThreshold={0.5}
       />
       <View
         style={{
@@ -287,5 +330,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  noResultsFound: {
+    color: "#fff",
+    fontSize: 16,
+    fontStyle: "italic",
+    fontWeight: "bold",
+    paddingVertical: 10,
   },
 });
